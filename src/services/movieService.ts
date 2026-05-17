@@ -7,7 +7,15 @@ export interface MoviesResponse {
   total_pages: number;
 }
 
-export const fetchMovies = async ({ query, page }: any) => {
+interface FetchMoviesParams {
+  query: string;
+  page: number;
+}
+
+export const fetchMovies = async ({
+  query,
+  page,
+}: FetchMoviesParams): Promise<MoviesResponse> => {
   const res = await axios.get<MoviesResponse>(
     `${BASE_URL}/search/movie`,
     {
