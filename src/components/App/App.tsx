@@ -1,62 +1,68 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Toaster } from "react-hot-toast";
+
+
+
+
 import SearchBar from "../SearchBar/SearchBar";
 import MovieGrid from "../MovieGrid/MovieGrid";
 import Loader from "../Loader/Loader";
 import ErrorMessage from "../ErrorMessage/ErrorMessage";
 import MovieModal from "../MovieModal/MovieModal";
+
 import { fetchMovies } from "../../services/movieService";
 import type { Movie } from "../../types/movie";
-import toast, { Toaster } from "react-hot-toast";
+
+
 
 export default function App() {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [selectedMovie, setSelectedMovie] =
-    useState<Movie | null>(null);
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const handleSearch = async (query: string) => {
-    try {
-      setMovies([]);
-      setLoading(true);
-      setError(false);
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["movies", query, page],
+    queryFn: () => fetchMovies({ query, page }),
+    enabled: !!query,
+  });
 
-      const data = await fetchMovies({ query });
+  const movies = data?.results ?? [];
 
-      if (data.length === 0) {
-        toast.error("No movies found for your request.");
-      }
 
-      setMovies(data);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
+  const handleSearch = (value: string) => {
+    setQuery(value);
+    setPage(1);
   };
 
   return (
     <>
       <Toaster />
 
+      {/* 🔍 SEARCH */}
       <SearchBar onSubmit={handleSearch} />
 
-      {loading && <Loader />}
-      {error && <ErrorMessage />}
+      {/* ⏳ LOADING */}
+      {isLoading && <Loader />}
 
+      {/* ❌ ERROR */}
+      {isError && <ErrorMessage />}
+
+      {/* 🎬 MOVIES */}
       {movies.length > 0 && (
-        <MovieGrid
-          movies={movies}
-          onSelect={setSelectedMovie}
-        />
+        <MovieGrid movies={movies} onSelect={setSelectedMovie} />
       )}
 
+      {/* 🎥 MODAL */}
       {selectedMovie && (
         <MovieModal
           movie={selectedMovie}
           onClose={() => setSelectedMovie(null)}
         />
       )}
+
+
+    
     </>
   );
 }
